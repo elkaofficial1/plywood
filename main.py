@@ -13,6 +13,18 @@ class Notes(QMainWindow):
         self.resize(1200, 1080)
         os.makedirs(NOTES_DIR, exist_ok=True)
 
+        # Создаем меню бар
+        menubar = self.menuBar()
+        
+        # Меню "File"
+        file_menu = menubar.addMenu("&File")
+        
+        # Меню "Help" с пунктом "About"
+        help_menu = menubar.addMenu("&Help")
+        about_action = QAction("&About", self)
+        about_action.triggered.connect(self.show_about)
+        help_menu.addAction(about_action)
+
         m = QFileSystemModel()
         m.setRootPath(NOTES_DIR)
         m.setNameFilters(["*.md"])
@@ -39,10 +51,21 @@ class Notes(QMainWindow):
         
         self.m, self.t = m, t
         self.current_file, self.dirty = None, False
-
+    
+    def show_about(self):
+        """Показывает окно 'About'"""
+        about_text = """
+        <h2>plywood</h2>
+        <p>Простой Markdown редактор</p>
+        <p>Версия 1.0</p>
+        <p>© 2023</p>
+        """
+        QMessageBox.about(self, "About plywood", about_text)
+    
     def update_preview(self):
         self.dirty = True
         self.p.setHtml(markdown.markdown(self.e.toPlainText()))
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     win = Notes()
