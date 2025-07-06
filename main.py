@@ -11,7 +11,7 @@ class Notes(QMainWindow):
         self.current_file = None
         super().__init__()
         self.setWindowTitle("plywood")
-        self.resize(1200, 1080)
+        self.resize(1000, 1000)
         os.makedirs(NOTES_DIR, exist_ok=True)
 
         m = QFileSystemModel()
@@ -45,6 +45,14 @@ class Notes(QMainWindow):
         actions = [
             ("New Note", self.new_note),
         ]
+        safe = [
+            ("Save Note", self.save_note),
+            ("Open Note", lambda: self.open_note(self.t.currentIndex())),
+            ("Save As", lambda: self.save_note()), 
+        ]
+        actions.extend(safe)
+        actions.append(("Exit", self.close))
+         
         for n, f in actions:
             a = QAction(n, self)
             a.triggered.connect(f)
@@ -68,7 +76,6 @@ class Notes(QMainWindow):
                 QMessageBox.warning(self, "Exists", "Note already exists.")
                 return
             open(p, "w", encoding="utf-8").close()
-            self.m.refresh()
             idx = self.m.index(p)
             self.t.setCurrentIndex(idx)
             self.open_note(idx)
@@ -83,7 +90,16 @@ class Notes(QMainWindow):
                 self.e.setPlainText(f.read())
             self.current_file, self.dirty = p, False
             self.update_preview()
-
+        
+    def save_note(self):
+        if self.current_file:
+            with open(self.current_file, "w", encoding="utf-8") as f:
+                f.write(self.e.toPlainText())
+            self.dirty = False
+            self.update_preview()
+        else:
+            QMessageBox.warning(self, "Error", "No note to save.")
+            
     def update_preview(self):
         self.dirty = True
         self.p.setHtml(markdown.markdown(self.e.toPlainText()))
