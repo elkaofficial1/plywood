@@ -39,18 +39,29 @@ class Notes(QMainWindow):
         s.addWidget(s2)
         self.setCentralWidget(s)
         self.menu()
-
+    def testing(self):
+        print("Settings dialog would be here")
     def menu(self):
         fm = self.menuBar().addMenu("File")
+        fm1 = self.menuBar().addMenu("settings")
+        
         actions = [
             ("New Note", self.new_note),
-        ]
-        safe = [
             ("Save Note", self.save_note),
             ("Open Note", lambda: self.open_note(self.t.currentIndex())),
-            ("Save As", lambda: self.save_note()), 
+            ("Save As", lambda: self.save_note()),
+            ("Delete", lambda: self.m.remove(self.t.currentIndex())),
         ]
-        actions.extend(safe)
+        
+        actions1 = [
+            ("test messenge", self.testing),
+        ]
+        
+        settings = [
+            ("Settings", self.testing)]
+        
+        actions1.extend(settings)
+        
         actions.append(("Exit", self.close))
          
         for n, f in actions:
@@ -59,7 +70,13 @@ class Notes(QMainWindow):
             fm.addAction(a)
             if n == "Delete":
                 fm.addSeparator()
-        # Добавим Help-меню
+        for n, f in actions1:
+            a = QAction(n, self)
+            a.triggered.connect(f)
+            fm1.addAction(a)
+            if n == "Delete":
+                fm1.addSeparator()
+
         help_menu = self.menuBar().addMenu("Help")
         about_action = QAction("About", self)
         about_action.triggered.connect(self.show_about)
@@ -103,6 +120,13 @@ class Notes(QMainWindow):
     def update_preview(self):
         self.dirty = True
         self.p.setHtml(markdown.markdown(self.e.toPlainText()))
+
+class settings(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Настройки приложения")
+        self.setMinimumSize(400, 300)
+        
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     win = Notes()
