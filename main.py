@@ -8,22 +8,11 @@ NOTES_DIR = os.path.expanduser("~/")
 
 class Notes(QMainWindow):
     def __init__(self):
+        self.current_file = None
         super().__init__()
         self.setWindowTitle("plywood")
         self.resize(1200, 1080)
         os.makedirs(NOTES_DIR, exist_ok=True)
-
-        # Создаем меню бар
-        menubar = self.menuBar()
-        
-        # Меню "File"
-        file_menu = menubar.addMenu("&File")
-        
-        # Меню "Help" с пунктом "About"
-        help_menu = menubar.addMenu("&Help")
-        about_action = QAction("&About", self)
-        about_action.triggered.connect(self.show_about)
-        help_menu.addAction(about_action)
 
         m = QFileSystemModel()
         m.setRootPath(NOTES_DIR)
@@ -33,7 +22,8 @@ class Notes(QMainWindow):
         t.setModel(m)
         t.setRootIndex(m.index(NOTES_DIR))
         [t.setColumnHidden(i, True) for i in range(1,4)]
-        # t.clicked.connect(self.open_note)
+        t.clicked.connect(self.open_note)
+        self.m, self.t = m, t
 
         self.e = QTextEdit()
         self.e.textChanged.connect(self.update_preview)
@@ -48,26 +38,58 @@ class Notes(QMainWindow):
         s2.addWidget(self.p)
         s.addWidget(s2)
         self.setCentralWidget(s)
-        
-        self.m, self.t = m, t
-        self.current_file, self.dirty = None, False
-    
+        self.menu()
+
+    def menu(self):
+        fm = self.menuBar().addMenu("File")
+        actions = [
+            ("New Note", self.new_note),
+        ]
+        for n, f in actions:
+            a = QAction(n, self)
+            a.triggered.connect(f)
+            fm.addAction(a)
+            if n == "Delete":
+                fm.addSeparator()
+        # Добавим Help-меню
+        help_menu = self.menuBar().addMenu("Help")
+        about_action = QAction("About", self)
+        about_action.triggered.connect(self.show_about)
+        help_menu.addAction(about_action)
+
     def show_about(self):
-        """Показывает окно 'About'"""
-        about_text = """
-        <h2>plywood</h2>
-        <p>Простой Markdown редактор</p>
-        <p>Версия 1.0</p>
-        <p>© 2023</p>
-        """
-        QMessageBox.about(self, "About plywood", about_text)
-    
+        QMessageBox.about(self, "About plywood", "Минималистичный markdown-блокнот на PySide6.\n(c) plywoodproject 2025")
+
+    def new_note(self):
+        name, ok = QInputDialog.getText(self, "New Note", "Note name:")
+        if ok and name:
+            p = os.path.join(NOTES_DIR, f"{name}.md")
+            if os.path.exists(p):
+                QMessageBox.warning(self, "Exists", "Note already exists.")
+                return
+            open(p, "w", encoding="utf-8").close()
+            self.m.refresh()
+            idx = self.m.index(p)
+            self.t.setCurrentIndex(idx)
+            self.open_note(idx)
+
+    def open_note(self, idx):
+        p = self.m.filePath(idx)
+        if os.path.isfile(p):
+            if hasattr(self, 'dirty') and self.dirty and self.current_file:
+                if QMessageBox.question(self, "Unsaved", "Save changes?") == QMessageBox.Yes:
+                    self.save_note()
+            with open(p, "r", encoding="utf-8") as f:
+                self.e.setPlainText(f.read())
+            self.current_file, self.dirty = p, False
+            self.update_preview()
+
     def update_preview(self):
         self.dirty = True
         self.p.setHtml(markdown.markdown(self.e.toPlainText()))
-
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     win = Notes()
     win.show()
+    
     sys.exit(app.exec())
