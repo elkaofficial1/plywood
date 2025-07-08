@@ -1,6 +1,6 @@
 import sys, os
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import *
+from PySide6.QtCore import Qt, QCoreApplication, QMetaObject, QRect
+from PySide6.QtWidgets import * 
 from PySide6.QtGui import QAction
 import markdown
 
@@ -11,7 +11,7 @@ class Notes(QMainWindow):
         self.current_file = None
         super().__init__()
         self.setWindowTitle("plywood")
-        self.resize(1000, 1000)
+        self.resize(1000, 900)
         os.makedirs(NOTES_DIR, exist_ok=True)
 
         m = QFileSystemModel()
@@ -24,7 +24,7 @@ class Notes(QMainWindow):
         [t.setColumnHidden(i, True) for i in range(1,4)]
         t.clicked.connect(self.open_note)
         self.m, self.t = m, t
-
+        
         self.e = QTextEdit()
         self.e.textChanged.connect(self.update_preview)
         self.p = QTextBrowser()
@@ -39,8 +39,16 @@ class Notes(QMainWindow):
         s.addWidget(s2)
         self.setCentralWidget(s)
         self.menu()
-    def testing(self):
-        print("Settings dialog would be here")
+        self.move(
+        self.screen().availableGeometry().center() - 
+        self.rect().center()
+        )
+    def show_ui_dialog(self):
+        dialog = QDialog(self)  
+        ui = Ui_Dialog()
+        ui.setupUi(dialog)     
+        dialog.exec()  
+    
     def menu(self):
         fm = self.menuBar().addMenu("File")
         fm1 = self.menuBar().addMenu("settings")
@@ -51,14 +59,15 @@ class Notes(QMainWindow):
             ("Open Note", lambda: self.open_note(self.t.currentIndex())),
             ("Save As", lambda: self.save_note()),
             ("Delete", lambda: self.m.remove(self.t.currentIndex())),
+            ("about", self.show_about),
         ]
         
         actions1 = [
-            ("test messenge", self.testing),
+            ("norm", self.show_ui_dialog),
         ]
         
         settings = [
-            ("Settings", self.testing)]
+            ("settings", self.show_ui_dialog)]
         
         actions1.extend(settings)
         
@@ -70,20 +79,15 @@ class Notes(QMainWindow):
             fm.addAction(a)
             if n == "Delete":
                 fm.addSeparator()
+
         for n, f in actions1:
             a = QAction(n, self)
             a.triggered.connect(f)
             fm1.addAction(a)
-            if n == "Delete":
-                fm1.addSeparator()
-
-        help_menu = self.menuBar().addMenu("Help")
-        about_action = QAction("About", self)
-        about_action.triggered.connect(self.show_about)
-        help_menu.addAction(about_action)
 
     def show_about(self):
         QMessageBox.about(self, "About plywood", "Минималистичный markdown-блокнот на PySide6.\n(c) plywoodproject 2025")
+
 
     def new_note(self):
         name, ok = QInputDialog.getText(self, "New Note", "Note name:")
@@ -97,16 +101,15 @@ class Notes(QMainWindow):
             self.t.setCurrentIndex(idx)
             self.open_note(idx)
 
+
     def open_note(self, idx):
         p = self.m.filePath(idx)
         if os.path.isfile(p):
-            if hasattr(self, 'dirty') and self.dirty and self.current_file:
-                if QMessageBox.question(self, "Unsaved", "Save changes?") == QMessageBox.Yes:
-                    self.save_note()
             with open(p, "r", encoding="utf-8") as f:
                 self.e.setPlainText(f.read())
             self.current_file, self.dirty = p, False
             self.update_preview()
+        
         
     def save_note(self):
         if self.current_file:
@@ -117,16 +120,63 @@ class Notes(QMainWindow):
         else:
             QMessageBox.warning(self, "Error", "No note to save.")
             
+            
     def update_preview(self):
         self.dirty = True
         self.p.setHtml(markdown.markdown(self.e.toPlainText()))
 
-class settings(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Настройки приложения")
-        self.setMinimumSize(400, 300)
-        
+
+class Ui_Dialog(object):
+    def setupUi(self, Dialog):
+        if not Dialog.objectName():
+            Dialog.setObjectName(u"settings")
+        Dialog.resize(400, 300)
+        self.widget = QWidget(Dialog)
+        self.widget.setObjectName(u"widget")
+        self.widget.setGeometry(QRect(10, 10, 102, 271))
+        self.verticalLayout = QVBoxLayout(self.widget)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.pushButton = QPushButton(self.widget)
+        self.pushButton.setObjectName(u"pushButton")
+
+        self.verticalLayout.addWidget(self.pushButton)
+
+        self.pushButton_2 = QPushButton(self.widget)
+        self.pushButton_2.setObjectName(u"pushButton_2")
+
+        self.verticalLayout.addWidget(self.pushButton_2)
+
+        self.pushButton_4 = QPushButton(self.widget)
+        self.pushButton_4.setObjectName(u"pushButton_4")
+
+        self.verticalLayout.addWidget(self.pushButton_4)
+
+        self.pushButton_5 = QPushButton(self.widget)
+        self.pushButton_5.setObjectName(u"pushButton_5")
+
+        self.verticalLayout.addWidget(self.pushButton_5)
+
+        self.pushButton_3 = QPushButton(self.widget)
+        self.pushButton_3.setObjectName(u"pushButton_3")
+
+        self.verticalLayout.addWidget(self.pushButton_3)
+
+
+        self.retranslateUi(Dialog)
+
+        QMetaObject.connectSlotsByName(Dialog)
+    # setupUi
+
+    def retranslateUi(self, Dialog):
+        Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Dialog", None))
+        self.pushButton.setText(QCoreApplication.translate("Dialog", u"\u043e\u0441\u043d\u043e\u0432\u043d\u044b\u0435", None))
+        self.pushButton_2.setText(QCoreApplication.translate("Dialog", u"PushButton", None))
+        self.pushButton_4.setText(QCoreApplication.translate("Dialog", u"PushButton", None))
+        self.pushButton_5.setText(QCoreApplication.translate("Dialog", u"PushButton", None))
+        self.pushButton_3.setText(QCoreApplication.translate("Dialog", u"PushButton", None))
+    # retranslateUi
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     win = Notes()
